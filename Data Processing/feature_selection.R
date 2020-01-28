@@ -6,13 +6,13 @@ cat("\014") # for clearing console or use Ctrl+L
 data=iris
 # split into training and validation datasets
 set.seed(1)
-ind<-sample(2,nrow(data), replace=TRUE, prob=c(0.7,0.3))
-trainData<-data[ind==1,]
-validationData<-data[ind==2,]
+ind<=sample(2,nrow(data), replace=TRUE, prob=c(0.7,0.3))
+trainData=data[ind==1,]
+validationData=data[ind==2,]
 
 # keep only instances that do not have missing values.
-trainData<-trainData[complete.cases(trainData),]
-validationData<-validationData[complete.cases(validationData),]
+trainData=trainData[complete.cases(trainData),]
+validationData=validationData[complete.cases(validationData),]
 
 # Correlation Feature Selection (CFS)
 
