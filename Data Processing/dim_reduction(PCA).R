@@ -55,7 +55,7 @@ library(stats)
 data=iris
 # split into training and validation datasets
 set.seed(1)
-ind<=sample(2,nrow(data), replace=TRUE, prob=c(0.7,0.3))
+ind=sample(2,nrow(data), replace=TRUE, prob=c(0.7,0.3))
 trainData=data[ind==1,]
 validationData=data[ind==2,]
 
