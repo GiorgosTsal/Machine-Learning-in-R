@@ -1,0 +1,186 @@
+---
+title: "Classification"
+author: "Giorgos Tsalidis"
+date: "1/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Classification with Decision trees
+
+A Decision Tree is a Machine Learning algorithm that is used mainly for classification problems.
+It can be applied to categorical and continuous data. The main concept of the algorithm
+is simple; the data are split consecutively according to certain splitting criteria.
+
+Decision trees are computationally efficient when training and quite fast for classifying new instances.
+Furthermore, they are comprehensional when they are not too large, therefore they are frequently
+used for data exploration. A common pitfall is that they are sensitive to overfitting, which can
+be confronted by pruning or by adding further criteria when building the tree.
+
+```{r}
+library(rpart)
+library(rpart.plot)
+weather=read.csv("../data/weather.txt")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+#To see the split for the variable Outlook, execute the following command
+model<-rpart(Play~Outlook, method="class", data=weather, minsplit=1)
+rpart.plot(model, extra = 104, nn = TRUE)
+```
+
+
+```{r}
+absfreq=table(weather[,c(1,4)])
+freq=prop.table(absfreq,1)
+freqSum=rowSums(prop.table(absfreq))
+```
+
+
+```{r}
+#calculate the Gini index for Sunny and Rainy
+GINI_Sunny=1-freq["Sunny","No"]^2-freq["Sunny","Yes"]^2
+GINI_Rainy=1-freq["Rainy","No"]^2-freq["Rainy","Yes"]^2
+
+#The total Gini for Outlook is computed by
+```
+Similarly, the GINI for Temperature and Humidity is GIN I T emp. = 0.367 and GIN I T emp. = 0.394 ,
+respectively. Hence, answering to question (a), the optimal first split using the Gini index is on
+Outlook.
+```{r}
+GINI_Outlook=freqSum["Sunny"]*GINI_Sunny+freqSum["Rainy"]*GINI_Rainy
+```
+
+Initially, we compute the total entropy of the dataset:
+
+```{r}
+freq = prop.table(table(weather[, c(4)]))
+Entropy_All = - freq["No"] * log(freq["No"]) - freq["Yes"] * log(freq["Yes"])
+```
+
+Then, for Outlook, we build the following frequency arrays:
+
+```{r}
+absfreq = table(weather[, c(1, 4)])
+freq = prop.table(absfreq, 1)
+freqSum = rowSums(prop.table(absfreq))
+```
+
+We calculate the entropy for Sunny and Rainy:
+
+```{r}
+#calculate the entropy for Sunny and Rainy
+Entropy_Sunny=-freq["Sunny","No"]*log(freq["Sunny","No"])-freq["Sunny","Yes"]*log(freq["Sunny","Yes"])
+Entropy_Rainy=-freq["Rainy","No"]*log(freq["Rainy","No"])-freq["Rainy","Yes"]*log(freq["Rainy","Yes"])
+```
+
+The total information gain for Outlook is computed by:
+
+```{r}
+#the tolat information for Outlook 
+GAIN_Outlook=Entropy_All-freqSum["Sunny"]*Entropy_Sunny-freqSum["Rainy"]*Entropy_Rainy
+```
+
+
+```{r}
+# Building the Decision Tree using rpart
+model<-rpart(Play~Outlook+Temperature+Humidity,
+             method="class",
+             data=weather,
+             minsplit=1,
+             minbucket=1,
+             cp=-1)
+```
+
+
+```{r}
+rpart.plot(model, extra = 104, nn = TRUE)
+```
+
+## Application with Pruning and Evaluation Metrics
+
+```{r}
+iris2 = iris[, c(1, 2, 5)]
+iris2$Species[c(101:150)] = iris2$Species[c(21:70)]
+iris2$Species = factor(iris2$Species)
+```
+
+After that, we split the dataset into training and testing data:
+
+```{r}
+trainingdata = iris2[c(1:40, 51:90, 101:140),]
+testdata = iris2[c(41:50, 91:100, 141:150),]
+```
+
+train the decision tree and plot it using the following commands
+
+```{r}
+#Build a decision tree using the training data (the minsplit parameter of rpart should be set to20, which is the default)
+model<-rpart(Species~., #The . in the formula stands for all the remaining variables in the data frame trainingdata
+             method="class",
+             data=trainingdata,
+             minsplit=20)
+
+```
+
+Visualise model
+
+```{r}
+rpart.plot(model, extra = 104, nn = TRUE)
+```
+
+Execute on test set
+
+```{r}
+xtest = testdata[,1:2]
+ytest = testdata[,3]
+pred = predict(model, xtest, type="class")
+```
+
+## Evaluation Metrics
+
+```{r}
+library(MLmetrics)
+cm = ConfusionMatrix(pred, ytest)
+accuracy = Accuracy(pred, ytest)
+precision = Precision(ytest, pred, 'versicolor')
+recall = Recall(ytest, pred, 'versicolor')
+f1 = F1_Score(ytest, pred, 'versicolor')
+data.frame(precision, recall, f1)
+```
+
+## Classification with Naive Bayes
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
