@@ -1,0 +1,283 @@
+---
+title: "Data Processing"
+author: "Giorgos Tsalidis"
+date: "1/31/2020"
+output: html_document
+---
+
+### Feature Selection
+
+In this section we will use the Correlation Feature Selection (CFS) method to select attributes
+to be used when training and testing the machine learning models.
+```{r}
+data = iris
+# split into training and validation datasets
+set.seed(1234)
+ind <- sample(2, nrow(data), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- data[ind==1,]
+validationData <- data[ind==2,]
+# keep only instances that do not have missing values.
+trainData <- trainData[complete.cases(trainData),]
+validationData <- validationData[complete.cases(validationData),]
+```
+
+### Using the CFS method
+
+```{r}
+library(FSelector)
+subset <- cfs(Species ~ ., trainData)
+f <- as.simple.formula(subset, "Species")
+print(f)
+```
+The output is a formula that we can use in various classification algorithms and says that
+according to the CFS algorithm and the training dataset, the best features in order to predict
+the Species of the Iris flowers are the Petal Length and the Petal Width.
+
+For example in the Naive Bayes algorithm, we will use both the formula that includes all the
+attributes for predicting the Species and the formula derived from CFS.
+```{r}
+library(e1071)
+model <- naiveBayes(Species ~ ., data=trainData, laplace = 1)
+simpler_model <- naiveBayes(f, data=trainData, laplace = 1)
+pred <- predict(model, validationData)
+simpler_pred <- predict(simpler_model, validationData)
+library(MLmetrics)
+train_pred <- predict(model, trainData)
+train_simpler_pred <- predict(simpler_model, trainData)
+paste("Accuracy in training all attributes",
+Accuracy(train_pred, trainData$Species), sep=" - ")
+paste("Accuracy in training CFS attributes",
+Accuracy(train_simpler_pred, trainData$Species), sep=" - ")
+paste("Accuracy in validation all attributes",
+Accuracy(pred, validationData$Species), sep=" - ")
+paste("Accuracy in validation CFS attributes",
+Accuracy(simpler_pred, validationData$Species), sep=" - ")
+```
+
+## Wrapper Methods
+### Forward Search
+
+```{r}
+# Downloading the file
+fileURL <- "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data"
+#download.file(fileURL, destfile="../data/breast-cancer-wisconsin.data")
+data <- read.table('../data/breast-cancer-wisconsin.data', na.strings = "?", sep=",")
+data <- data[,-1]
+names(data) <- c("ClumpThickness",
+"UniformityCellSize",
+"UniformityCellShape",
+"MarginalAdhesion",
+"SingleEpithelialCellSize",
+"BareNuclei",
+"BlandChromatin",
+"NormalNucleoli",
+"Mitoses",
+"Class")
+data$Class <- factor(data$Class, levels=c(2,4), labels=c("benign", "malignant"))
+set.seed(1234)
+ind <- sample(2, nrow(data), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- data[ind==1,]
+validationData <- data[ind==2,]
+# remove cases with missing data
+trainData <- trainData[complete.cases(trainData),]
+validationData <- validationData[complete.cases(validationData),]
+```
+Apply Kfold cross validation
+
+```{r}
+library(FSelector)
+library(rpart)
+evaluator <- function(subset) {
+#k-fold cross validation
+k <- 5
+splits <- runif(nrow(trainData))
+results = sapply(1:k, function(i) {
+  test.idx <- (splits >= (i - 1) / k) & (splits < i / k)
+  train.idx <- !test.idx
+  test <- trainData[test.idx, , drop=FALSE]
+  train <- trainData[train.idx, , drop=FALSE]
+  tree <- rpart(as.simple.formula(subset, "Class"), train)
+  error.rate = sum(test$Class != predict(tree, test, type="c")) / nrow(test)
+return(1 - error.rate)
+})
+print(subset)
+print(mean(results))
+return(mean(results))
+}
+subset <- forward.search(names(trainData)[-10], evaluator)
+```
+
+
+```{r}
+f <- as.simple.formula(subset, "Class")
+print(f)
+```
+
+The fact that we performed forward search using decision trees in order to get a formula with
+a subset of attributes, doesn’t stop us from using another classification model for training and
+prediction. For example as in the previous examples in tehi chapter, we can use the Naive Bayes
+algorithm to evaluate the forward selection algorithm both in the training and the validation
+datasets under the accuracy metric.
+
+```{r}
+library(e1071)
+model <- naiveBayes(Class ~ ., data=trainData, laplace = 1)
+simpler_model <- naiveBayes(f, data=trainData, laplace = 1)
+pred <- predict(model, validationData)
+simpler_pred <- predict(simpler_model, validationData)
+library(MLmetrics)
+train_pred <- predict(model, trainData)
+train_simpler_pred <- predict(simpler_model, trainData)
+paste("Accuracy in training all attributes",
+Accuracy(train_pred, trainData$Class), sep=" - ")
+paste("Accuracy in training forward search attributes",
+Accuracy(train_simpler_pred, trainData$Class), sep=" - ")
+paste("Accuracy in validation all attributes",
+Accuracy(pred, validationData$Class), sep=" - ")
+paste("Accuracy in validation forward search attributes",
+Accuracy(simpler_pred, validationData$Class), sep=" - ")
+```
+
+## Dimensionality Reduction
+### Principal Components Analysis
+
+Step 1: Data
+First we are going to make a dataset and plot it.
+```{r}
+d <- c(2.5, 2.4, 0.5, 0.7, 2.2, 2.9, 1.9, 2.2, 3.1, 3.0, 2.3,
+2.7, 2, 1.6, 1, 1.1, 1.5, 1.6, 1.1, 0.9)
+data <- matrix(d, ncol=2, byrow = T)
+plot(data, xlab="x1", ylab="x2")
+```
+
+Step 2: Subtract the mean
+
+We subtract the mean of each attribute (x1, x2) from the respective values (centering the data)
+using the function scale .
+
+```{r}
+data_norm <- scale(data, scale=F)
+plot(data_norm, xlab="x1", ylab="x2")
+```
+Step 3: Calculate the covariance matrix
+
+We calculate the covariance matrix using the function cov .
+
+```{r}
+S <- cov(data_norm)
+print(S)
+```
+Step 4: Computer the eigenvectors of the covariance matrix
+
+Using the svd method (Singular Value Decomposition) we derive the eigenvectors of the
+covariance matrix. First we print the decomposition:
+
+```{r}
+udv <- svd(S)
+print(udv)
+```
+
+then we plot the eigenvectors:
+```{r}
+plot(data_norm, asp=1, xlab="x1", ylab="x2")
+arrows(0,0,udv$u[1,1],udv$u[2,1], lwd=1)
+arrows(0,0,udv$u[1,2],udv$u[2,2], lwd=0.5)
+```
+
+Step 5: Choosing components
+
+We can use a barplot to display the variance accounted for each component.
+```{r}
+barplot(udv$d)
+print(cumsum(udv$d)/sum(udv$d))
+```
+We can see that the 1st component accounts for more than 95% of the variance.
+
+Step 6: Picking the 1st component
+
+We transform the 2D dataset into a 1D dataset using just the 1st Principal Component (PC).
+
+```{r}
+data_new <- t(udv$u[,1,drop=FALSE]) %*% t(data_norm)
+data_new
+
+plot(data_new,data_new,asp=1,xlab="x1", ylab="x2")
+```
+### PCA using an R function
+
+In this subsection, we will use the prcomp function that performs PCA in one step. We will apply
+it on the Iris dataset and test the gains or losses in terms of accuracy using the kNN algorithm.
+```{r}
+# download the file
+data = iris
+set.seed(1234)
+ind <- sample(2, nrow(data), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- data[ind==1,]
+validationData <- data[ind==2,]
+library(class)
+library(stats)
+trainData <- trainData[complete.cases(trainData),]
+validationData <- validationData[complete.cases(validationData),]
+trainDataX <- trainData[,-ncol(trainData)]
+logTrainDataX <- log(trainDataX)
+train.pca <- prcomp(logTrainDataX, center = TRUE, scale. = TRUE)
+summary(train.pca)
+```
+
+
+```{r}
+trainDataY <- trainData$Species
+validationDataX <- validationData[,-ncol(trainData)]
+# Let's also transform the validation data
+logValidationDataX <- log(validationDataX)
+validation.pca <- predict(train.pca, newdata=logValidationDataX)
+validationDataY <- validationData$Species
+# no pca prediction
+prediction = knn(trainDataX, validationDataX, trainDataY, k = 3)
+# So let's predict using only the 7 principal components
+prediction_pca = knn(train.pca$x[,1:2], validation.pca[,1:2], trainDataY, k = 3)
+cat("Confusion matrix:\n")
+xtab = table(prediction, validationData$Species)
+print(xtab)
+cat("\nEvaluation:\n\n")
+accuracy = sum(prediction == validationData$Species)/length(validationData$Species)
+cat(paste("Accuracy:\t", format(accuracy, digits=2), "\n",sep=" "))
+cat("Confusion matrix PCA:\n")
+xtab = table(prediction_pca, validationData$Species)
+print(xtab)
+
+cat("\nEvaluation PCA:\n\n")
+accuracy = sum(prediction_pca == validationData$Species)/length(validationData$Species)
+cat(paste("Accuracy PCA:\t", format(accuracy, digits=2), "\n",sep=" "))
+```
+
+Using the PCA we can also plot in 2 dimensions, high-dimensional data, by using just the first
+two components.
+
+```{r}
+plot(train.pca$x[trainData$Species == 'setosa',1:2], col="blue", ylim = c(-3, 3),
+xlim=c(-3,3), asp=1)
+points(train.pca$x[trainData$Species == 'versicolor',1:2], pch = 3, col="red")
+points(train.pca$x[trainData$Species == 'virginica',1:2], pch = 4, col="green")
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
