@@ -3,8 +3,8 @@ title: "Classification"
 author: "Giorgos Tsalidis"
 date: "1/31/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -161,6 +161,292 @@ data.frame(precision, recall, f1)
 ## Classification with Naive Bayes
 
 ```{r}
+traffic = read.csv("../data/traffic.txt")
+library(e1071)
+traffic
+```
+
+### Building Simple Model
+
+```{r}
+model <- naiveBayes(HighTraffic ~ ., data = traffic)
+print(model)
+```
+
+classify a new instance with values (Weather, Day) = (Hot, Vacation)
+
+```{r}
+trvalue <- data.frame(Weather = factor("Hot", levels(traffic$Weather)),
+factor("Vacation", levels(traffic$Day)))
+predict(model, trvalue)
+```
+
+We can also get the relevant probabilities
+
+```{r}
+predict(model, trvalue, type = "raw")
+```
+
+### Building Model with Laplace Smoothing
+
+Apply the Naive Bayes classifier on the dataset HouseVotes84. Initially, we import the
+dataset, ignoring any instances with missing values
+
+```{r}
+library(e1071)
+library(MLmetrics)
+library(ROCR)
+
+data(HouseVotes84, package = "mlbench")
+votes = na.omit(HouseVotes84)
+
+#split the dataset into training and testing data:
+trainingdata = votes[1:180,]
+testingdata = votes[181:232,]
+```
+
+### Building and Applying the Naive Bayes Model
+
+```{r}
+model <- naiveBayes(Class ~ ., data = trainingdata)
+
+xtest = testingdata[,-1]
+ytest = testingdata[,1]
+pred = predict(model, xtest)
+predprob = predict(model, xtest, type = "raw")
+```
+
+### Metrics Computation and ROC Curve Plotting
+
+```{r}
+ConfusionMatrix(ytest, pred)
+Precision(ytest, pred, "democrat")
+Recall(ytest, pred)
+```
+
+Plotting the ROC curve (question (c)) initially requires computing TPR and FRP with the
+following commands:
+
+```{r}
+pred_obj = prediction(predprob[,1], ytest, label.ordering = c("republican", "democrat"))
+ROCcurve <- performance(pred_obj, "tpr", "fpr")
+
+plot(ROCcurve, col = "blue")
+abline(0,1, col = "grey")
+
+performance(pred_obj, "auc")
+```
+
+##Classification with k-Nearest Neighbors
+
+k-Nearest Neighbors (kNN) is a machine learning algorithm, where the prediction for a new
+instance depends on its k nearest instances. As a result, the class for a new instance is determined
+by majority vote given the class of its k nearest instances.
+
+
+Breast Cancer Wisconsin (Original) Data Set
+For this example we are going to use the Breast Cancer Wisconsin (Original) Data Set9
+and in particular the breast-cancer-wisconsin.data file10 from the UCI Machine Learning
+Repository11
+```{r}
+rm(list=ls())
+# download the dataset
+fileURL <- "http://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data"
+#download.file(fileURL, destfile="../data/breast-cancer-wisconsin.data")
+# read the data
+data <- read.table("../data/breast-cancer-wisconsin.data", na.strings = "?", sep=",")
+# remove the id column
+data <- data[,-1]
+# put names in the columns (attributes)
+names(data) <- c("ClumpThickness",
+"UniformityCellSize",
+"UniformityCellShape",
+"MarginalAdhesion",
+"SingleEpithelialCellSize",
+"BareNuclei",
+"BlandChromatin",
+"NormalNucleoli",
+"Mitoses",
+"Class")
+# make the class a factor
+data$Class <- factor(data$Class, levels=c(2,4), labels=c("benign", "malignant"))
+# set the seed
+set.seed(1)
+# split the dataset
+ind <- sample(2, nrow(iris), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- data[ind==1,]
+validationData <- data[ind==2,]
+```
+
+### Training & Prediction
+
+```{r}
+library(class)
+
+trainData <- trainData[complete.cases(trainData),]
+validationData <- validationData[complete.cases(validationData),]
+trainDataX <- trainData[,-ncol(trainData)]
+trainDataY <- trainData$Class
+validationDataX <- validationData[,-ncol(trainData)]
+validationDataY <- validationData$Class
+```
+
+### Prediction
+
+```{r}
+prediction = knn(trainDataX, validationDataX, trainDataY, k = 1)
+```
+
+### Evaluation
+
+```{r}
+cat("Confusion matrix:\n")
+xtab = table(prediction, validationData$Class)
+print(xtab)
+cat("\nEvaluation:\n\n")
+accuracy = sum(prediction == validationData$Class)/length(validationData$Class)
+precision = xtab[1,1]/sum(xtab[,1])
+recall = xtab[1,1]/sum(xtab[1,])
+f = 2 * (precision * recall) / (precision + recall)
+cat(paste("Accuracy:\t", format(accuracy, digits=2), "\n",sep=" "))
+cat(paste("Precision:\t", format(precision, digits=2), "\n",sep=" "))
+cat(paste("Recall:\t\t", format(recall, digits=2), "\n",sep=" "))
+cat(paste("F-measure:\t", format(f, digits=2), "\n",sep=" "))
+```
+
+### Classification with Support Vector Machines
+
+Support Vector Machines (SVM) constitute an algorithm that finds a linear hyperplane that
+separates the data. The problem can be defined as maximizing the distance between the
+hyperplane and the data (margin):
+
+Maximize M argin = 2/||w 2 || given that f (x) = {1if w · x + b ≥ 1, −1if w · x + b ≤ 1}
+
+If the data are not linearly separable, then they can be mapped to a space of different (usually
+larger) dimensionality, in order to make them linearly separable.
+
+```{r}
+library(MLmetrics)
+library(e1071)
+
+#load the dataset as a dataframe
+rm(list=ls())
+# download the dataset
+fileURL<-"https://media.geeksforgeeks.org/wp-content/uploads/social.csv"
+#download.file(fileURL, destfile="../data/social.csv") # uncomment to download
+
+```
+
+
+```{r}
+# Importing the dataset 
+dataset = read.csv('../data/social.csv') 
+
+# Taking columns 3-5 
+dataset = dataset[3:5] 
+
+# Encoding the target feature as factor 
+dataset$Purchased = factor(dataset$Purchased, levels = c(0, 1)) 
+```
+
+
+```{r}
+# Splitting the dataset into the Training set and Test set 
+#install.packages('caTools') 
+library(caTools) 
+
+set.seed(123) 
+split = sample.split(dataset$Purchased, SplitRatio = 0.75) 
+
+training_set = subset(dataset, split == TRUE) 
+test_set = subset(dataset, split == FALSE) 
+
+```
+
+
+```{r}
+# Feature Scaling 
+training_set[-3] = scale(training_set[-3]) 
+test_set[-3] = scale(test_set[-3]) 
+
+```
+
+
+```{r}
+
+# Fitting SVM to the Training set 
+#install.packages('e1071') 
+library(e1071) 
+
+classifier = svm(formula = Purchased ~ ., 
+                 data = training_set, 
+                 type = 'C-classification', 
+                 kernel = 'linear') 
+
+# Predicting the Test set results 
+y_pred = predict(classifier, newdata = test_set[-3]) 
+print(y_pred)
+
+```
+
+
+```{r}
+# Making the Confusion Matrix 
+cm = table(test_set[, 3], y_pred)
+```
+
+
+```{r}
+library(ElemStatLearn) 
+
+# Plotting the training data set results 
+set = training_set 
+X1 = seq(min(set[, 1]) - 1, max(set[, 1]) + 1, by = 0.01) 
+X2 = seq(min(set[, 2]) - 1, max(set[, 2]) + 1, by = 0.01) 
+
+grid_set = expand.grid(X1, X2) 
+colnames(grid_set) = c('Age', 'EstimatedSalary') 
+y_grid = predict(classifier, newdata = grid_set) 
+
+```
+
+
+```{r}
+
+plot(set[, -3], 
+     main = 'SVM (Training set)', 
+     xlab = 'Age', ylab = 'Estimated Salary', 
+     xlim = range(X1), ylim = range(X2)) 
+
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE) 
+
+points(grid_set, pch = '.', col = ifelse(y_grid == 1, 'coral1', 'aquamarine')) 
+
+points(set, pch = 21, bg = ifelse(set[, 3] == 1, 'green4', 'red3')) 
+```
+
+
+```{r}
+#Visualizing the Test set results
+
+set = test_set 
+X1 = seq(min(set[, 1]) - 1, max(set[, 1]) + 1, by = 0.01) 
+X2 = seq(min(set[, 2]) - 1, max(set[, 2]) + 1, by = 0.01) 
+
+grid_set = expand.grid(X1, X2) 
+colnames(grid_set) = c('Age', 'EstimatedSalary') 
+y_grid = predict(classifier, newdata = grid_set) 
+
+plot(set[, -3], main = 'SVM (Test set)', 
+     xlab = 'Age', ylab = 'Estimated Salary', 
+     xlim = range(X1), ylim = range(X2)) 
+
+contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE) 
+
+points(grid_set, pch = '.', col = ifelse(y_grid == 1, 'coral1', 'aquamarine')) 
+
+points(set, pch = 21, bg = ifelse(set[, 3] == 1, 'green4', 'red3')) 
+
 ```
 
 
@@ -169,20 +455,5 @@ data.frame(precision, recall, f1)
 
 
 ```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
+cm
 ```
