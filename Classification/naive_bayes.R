@@ -2,6 +2,7 @@
 script.dir <- dirname(sys.frame(1)$ofile)
 setwd(script.dir)
 cat("\014") # for clearing console or use Ctrl+L
+rm(list=ls()) #fir clearing env
 #install.packages("e1071")
 library(e1071)
 
@@ -10,6 +11,7 @@ traffic=read.csv("../data/traffic.txt")
 model <- naiveBayes(HighTraffic ~ ., data = traffic)
 
 print(model)
+
 
 trvalue1<-data.frame(Weather=factor("Hot",levels(traffic$Weather)),  Day=factor("Vacation",levels(traffic$Day)))
 trvalue2<-data.frame(Weather=factor("Hot",levels(traffic$Weather)),  Day=factor("Weekend",levels(traffic$Day)))
@@ -28,6 +30,8 @@ print(pred1)
 pred2 = predict(modelLapl, trvalue2, type="raw")
 print(pred2)
 
+
+#Second part
 #apply the Naive Bayes classifier on the dataset HouseVotes84
 #install.packages("mlbench")
 library(e1071)
@@ -36,7 +40,7 @@ library(ROCR)
 
 data(HouseVotes84, package="mlbench")
 votes=na.omit(HouseVotes84)
-#print(votes)
+print(votes)
 #Partition Data to train and test
 trainingdata=votes[1:180,]
 testingdata=votes[181:232,]

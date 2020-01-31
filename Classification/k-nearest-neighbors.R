@@ -1,6 +1,7 @@
 #in order to set current directory as root
 script.dir <- dirname(sys.frame(1)$ofile)
 setwd(script.dir)
+rm(list=ls()) #fir clearing env
 cat("\014") # for clearing console or use Ctrl+L
 
 #import class library of kNN model 
