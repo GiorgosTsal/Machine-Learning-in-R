@@ -15,10 +15,12 @@ print(model)
 
 trvalue1<-data.frame(Weather=factor("Hot",levels(traffic$Weather)),  Day=factor("Vacation",levels(traffic$Day)))
 trvalue2<-data.frame(Weather=factor("Hot",levels(traffic$Weather)),  Day=factor("Weekend",levels(traffic$Day)))
-
+print('========')
 print(predict(model, trvalue1, type="raw"))
+print('========')
+print('--------')
 print(predict(model, trvalue2, type="raw"))
-
+print('--------')
 
 #same using laplace smoothing
 modelLapl <- naiveBayes(HighTraffic ~ ., data = traffic, laplace = 1)

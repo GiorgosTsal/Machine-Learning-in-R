@@ -29,7 +29,13 @@ print(knn_res5)
 
 test_instance2 = c(0.7, 0.6)
 knn_res = knn(X_train, test_instance2, Y_train, k=1, prob=TRUE)
-print(knn_res)
+knn_res5 = knn(X_train, test_instance2, Y_train, k=5, prob=TRUE)
+print("me k=5")
+print(knn_res5)
+knn_res10 = knn(X_train, test_instance2, Y_train, k=10, prob=TRUE)
+print("me k=10")
+print(knn_res10)
+
 
 #apply k-NN in the breast cancer Wisconsin dataset.
 
