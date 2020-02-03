@@ -83,21 +83,7 @@ Rec = 133/(133+15)
 Fmeasure <- 2 * Pre * Rec / (Pre + Rec)
 print(Fmeasure)
 
-#Q5
-rm(list=ls()) #fir clearing env
-print("======Q5======") 
-first = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Alt = c("Yes","Yes","No","Yes","Yes","No","No","No","No","Yes","No","Yes")
-Bar = c("Yes","Yes","No","Yes","Yes","No","No","No","No","Yes","No","Yes")
-Fri = c("Yes","Yes","No","Yes","Yes","No","No","No","No","Yes","No","Yes")
-Hungry = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Patrons = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Price = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Rain = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Res = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Type = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-Est = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
-WillWait = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+
 
 #Q5
 print("======Q5======")
@@ -145,8 +131,48 @@ mean_silhouette = mean(model_silhouette[, 3])
 
 #Q19
 print("=====Q19======")
+my_matrix = matrix(, nrow = 4, ncol = 4,dimnames = list(c("A", "B","C","D"), c("A", "B","C","D")))
+# Loop over my_matrix
+for(row in 1:nrow(my_matrix)) {
+  for(col in 1:ncol(my_matrix)) {
+    if(row==col){
+      my_matrix[row, col]=0
+    }
+  }
+}
+my_matrix[1,2]=1
+my_matrix[1,3]=4
+my_matrix[1,4]=5
+my_matrix[2,3]=2
+my_matrix[2,4]=6
+my_matrix[3,4]=3
+
+mydata = as.data.frame(my_matrix)
 
 
+
+print(my_matrix)
+
+A = c(0, 1, 4, 5)
+B = c(NA, 0, 2, 6)
+C = c(NA, NA, 0, 3)
+D = c(NA, NA, NA, 0)
+
+# Construct vector containing the data labels which correspond to the row names
+rnames=c("A","B","C","D")
+#cnames=c("A","B","C","D")
+
+#create df
+hierdata=data.frame(A,B,C,D , row.names = rnames)
+#plot data
+plot(hierdata, pch=15)
+#distance matrix
+d=dist(hierdata)
+
+# Perform clustering using complete linkage
+hc_single=hclust(d, method="complete")
+# Plot the respective dendrogram
+plot(hc_single)
 
 
 #Q20
@@ -168,6 +194,7 @@ hc_complete = hclust(d, method = "complete")
 plot(hc_complete)
 
 #dbscan performance
+library(dbscan)
 dbmodel = dbscan(dcdata, eps = 0.75, minPts = 5)
 dbmodel1 = dbscan(dcdata, eps = 1.00, minPts = 5)
 dbmodel2 = dbscan(dcdata, eps = 1.25, minPts = 5)
@@ -216,3 +243,32 @@ model_silhouette_hc_complete = silhouette(clusters2, d)
 plot(model_silhouette_hc_complete)
 mean_silhouette_3 = mean(model_silhouette_hc_complete[, 3])
 print(sprintf(mean_silhouette_3, fmt = '%#.3f'))
+
+#for single accuracy
+cm = as.matrix(table(Actual = target, Predicted = clusters)) 
+print(cm)
+accuracy = sum(diag(cm)) / sum(cm)
+print(accuracy)
+#for single accuracy
+cm2 = as.matrix(table(Actual = target, Predicted = clusters2)) 
+print(cm2)
+accuracy2 = sum(diag(cm2)) / sum(cm2)
+print(accuracy2)
+
+# #Q5
+# print("======Q5======")
+# 
+# rm(list=ls()) #fir clearing env
+# 
+# first = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+# Alt = c("Yes","Yes","No","Yes","Yes","No","No","No","No","Yes","No","Yes")
+# Bar = c("No","No","Yes","No","No","Yes","Yes","No","Yes","Yes","No","Yes")
+# Fri = c("No","No","No","Yes","Yes","No","No","No","Yes","Yes","No","Yes")
+# Hungry =  c("Yes","Yes","No","Yes","No","Yes","No","Yes","No","Yes","No","Yes")
+# Patrons = c("Some","Full","Some","","X5","X6","X7","X8","X9","X10","X11","X12")
+# Price = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+# Rain = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+# Res = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+# Type = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+# Est = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")
+# WillWait = c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12")

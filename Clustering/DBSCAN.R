@@ -42,15 +42,17 @@ plot(mdata, col = model$cluster + 1, pch = ifelse(model$cluster, 1, 4))
 
 print("==================")
 rm(list=ls()) #fir clearing env
-datam = matrix(c(6,12,18,24,30,42,48), byrow = TRUE, nrow = 1)
+X = c(6,12,18,24,30,42,48)
 
-modelq = dbscan(datam, eps = 10, minPts = 1)
+datafr = data.frame(X)
+
+modelq = dbscan(datafr, eps = 10, minPts = 1)
 
 centers = modelq$centers
-
+print(centers)
 # Get the distribution of data points among clusters
 distr = modelq$cluster
 print(distr)
 
 # Plot data using a different color for each cluster
-plot(datam, col = modelq$cluster, pch = 1)
+plot(datafr, col = modelq$cluster, pch = ifelse(modelq$cluster,1,4))
